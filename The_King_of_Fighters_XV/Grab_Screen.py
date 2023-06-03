@@ -40,7 +40,7 @@ if __name__ == "__main__":
     cv2.namedWindow('Screen')
 
     # 调用grab_screen()函数获取截图
-    img = grab_screen(region=(0,0,1000,1000))
+    img = grab_screen(region=(0,0,500,500))
 
     # 将BGR格式的图像转换为RGB格式
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
