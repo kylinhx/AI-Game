@@ -16,4 +16,7 @@ Activate your new nevironment
 ```
 conda activate AIGames
 ```
-Install necessary docs
+Install necessary libraries 
+```
+pip install -r requirements.txt
+```
