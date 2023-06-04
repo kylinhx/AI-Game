@@ -30,7 +30,7 @@ K = 0x25
 LSHIFT = 0x2A
 R = 0x13#用R代替识破
 V = 0x2F
-
+U = 0x16
 Q = 0x10
 I = 0x17
 O = 0x18
@@ -92,118 +92,88 @@ def ReleaseKey(hexKeyCode):
     x = Input( ctypes.c_ulong(1), ii_ )
     ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
     
-    
-def defense():
-    PressKey(M)
+# 跳跃
+def Jump():
+    PressKey(W)
     time.sleep(0.05)
-    ReleaseKey(M)
+    ReleaseKey(W)
     #time.sleep(0.1)
-    
-def attack():
+
+# 下蹲
+def Down():
+    PressKey(S)
+    time.sleep(0.05)
+    ReleaseKey(S)
+
+# 左移动
+def Left():
+    PressKey(A)
+    time.sleep(0.05)
+    ReleaseKey(A)
+
+# 右移动
+def Right():
+    PressKey(D)
+    time.sleep(0.05)
+    ReleaseKey(D)
+
+# 轻拳
+def attack_light_rist():
+    PressKey(U)
+    time.sleep(0.05)
+    ReleaseKey(U)
+
+# 重拳
+def attack_heavy_rist():
+    PressKey(I)
+    time.sleep(0.05)
+    ReleaseKey(I)
+
+# 轻腿
+def attack_light_legs():
     PressKey(J)
     time.sleep(0.05)
     ReleaseKey(J)
-    #time.sleep(0.1)
-    
-def go_forward():
-    PressKey(W)
-    time.sleep(0.4)
-    ReleaseKey(W)
-    
-def go_back():
+
+# 重腿
+def attack_heavy_legs():
+    PressKey(K)
+    time.sleep(0.05)
+    ReleaseKey(K)
+
+# 终结技
+def super():
     PressKey(S)
-    time.sleep(0.4)
+    time.sleep(0.05)
     ReleaseKey(S)
-    
-def go_left():
+
     PressKey(A)
-    time.sleep(0.4)
+    PressKey(S)
+    time.sleep(0.05)
+
+    PressKey(A)
+    time.sleep(0.05)
     ReleaseKey(A)
-    
-def go_right():
+
+    PressKey(A)
+    PressKey(S)
+    time.sleep(0.1)
+
+    PressKey(S)
+    time.sleep(0.05)
+    ReleaseKey(S)
+
     PressKey(D)
-    time.sleep(0.4)
+    PressKey(S)
+    time.sleep(0.05)
+
+    PressKey(D)
+    time.sleep(0.05)
     ReleaseKey(D)
-    
-def jump():
-    PressKey(K)
-    time.sleep(0.1)
-    ReleaseKey(K)
-    #time.sleep(0.1)
-    
-def dodge():#闪避
-    PressKey(R)
-    time.sleep(0.1)
-    ReleaseKey(R)
-    #time.sleep(0.1)
-    
-def lock_vision():
-    PressKey(V)
-    time.sleep(0.3)
-    ReleaseKey(V)
-    time.sleep(0.1)
-    
-def go_forward_QL(t):
-    PressKey(W)
-    time.sleep(t)
-    ReleaseKey(W)
-    
-def turn_left(t):
-    PressKey(left)
-    time.sleep(t)
-    ReleaseKey(left)
-    
-def turn_up(t):
-    PressKey(up)
-    time.sleep(t)
-    ReleaseKey(up)
-    
-def turn_right(t):
-    PressKey(right)
-    time.sleep(t)
-    ReleaseKey(right)
-    
-def F_go():
-    PressKey(F)
-    time.sleep(0.5)
-    ReleaseKey(F)
-    
-def forward_jump(t):
-    PressKey(W)
-    time.sleep(t)
-    PressKey(K)
-    ReleaseKey(W)
-    ReleaseKey(K)
-    
-def press_esc():
-    PressKey(esc)
-    time.sleep(0.3)
-    ReleaseKey(esc)
-    
-def dead():
-    PressKey(M)
-    time.sleep(0.5)
-    ReleaseKey(M)
+
+    PressKey(I)
+    time.sleep(0.05)
+    ReleaseKey(I)
 
 if __name__ == '__main__':
     time.sleep(5)
-    time1 = time.time()
-    while(True):
-        if abs(time.time()-time1) > 5:
-            break
-        else:
-            PressKey(M)
-            time.sleep(0.1)
-            ReleaseKey(M)
-            time.sleep(0.2)
-        
-    
-    PressKey(W)
-    time.sleep(0.4)
-    ReleaseKey(W)
-    time.sleep(1)
-    
-    PressKey(J)
-    time.sleep(0.1)
-    ReleaseKey(J)
-    time.sleep(1)

@@ -2,23 +2,23 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
+import torchvision.models as models
 import torch.optim as optim
 import gym
+import cv2
 
 # Define the DQN network
 class DQN(nn.Module):
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, output_dim):
         super(DQN, self).__init__()
-        # Define fully connected layers
-        self.fc1 = nn.Linear(input_dim, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.fc3 = nn.Linear(128, output_dim)
+        self.mobilev3 = models.mobilenet_v3_small(pretrained=True)
+        self.mobilev3.classifier = nn.Linear(576, output_dim)
 
     def forward(self, x):
-        # Pass input through the layers with ReLU activation
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.mobilev3.features(x)
+        x = nn.functional.adaptive_avg_pool2d(x, (1, 1))
+        x = x.view(x.size(0), -1)
+        x = self.mobilev3.classifier(x)
         return x
 
 # Define Experience Replay buffer
@@ -44,34 +44,36 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
-# Define DQN agent
 class DQNAgent:
     def __init__(self, env):
+        # Initialize agent with environment
         self.env = env
-        self.input_dim = env.observation_space.shape[0]
-        self.output_dim = env.action_space.n
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.input_dim = env.observation_space.shape[0]   # 获取状态空间维度
+        self.output_dim = env.action_space.n   # 获取行为空间维度
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')   # 检查是否有GPU
 
         # Define DQN networks and optimizer
-        self.policy_net = DQN(self.input_dim, self.output_dim).to(self.device)
-        self.target_net = DQN(self.input_dim, self.output_dim).to(self.device)
-        self.target_net.load_state_dict(self.policy_net.state_dict())
-        self.target_net.eval()
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=0.001)
+        self.policy_net = DQN(self.output_dim).to(self.device)   # 创建策略网络
+        self.target_net = DQN(self.output_dim).to(self.device)   # 创建目标网络
+        self.target_net.load_state_dict(self.policy_net.state_dict())   # 将策略网络的参数复制到目标网络中
+        self.target_net.eval()   # 将目标网络设置为评估模式
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=0.001)   # 创建Adam优化器
 
         # Define hyperparameters
-        self.gamma = 0.99
-        self.epsilon = 1.0
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
-        self.batch_size = 128
-        self.memory = ReplayBuffer(10000)
+        self.gamma = 0.99   # 奖励折扣因子
+        self.epsilon = 1.0   # ε-greedy策略的初始探索率
+        self.epsilon_min = 0.01   # ε-greedy策略的最小探索率
+        self.epsilon_decay = 0.995   # ε-greedy策略的探索率衰减因子
+        self.batch_size = 128   # 批量大小
+        self.memory = ReplayBuffer(10000)   # 创建经验回放缓冲区
 
     def select_action(self, state):
         # Choose an action using epsilon-greedy
         if np.random.rand() < self.epsilon:
+            # Select a random action with probability ε
             return self.env.action_space.sample()
         with torch.no_grad():
+            # Select the action with the highest Q-value with probability (1-ε)
             state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
             q_values = self.policy_net(state)
             action = q_values.max(1)[1].item()
@@ -80,8 +82,10 @@ class DQNAgent:
     def train(self):
         # Train the network using sampled experiences
         if len(self.memory) < self.batch_size:
+            # If the replay buffer does not have enough experiences, skip training
             return
 
+        # Sample a batch of experiences from the replay buffer
         state, action, reward, next_state, done = self.memory.sample(self.batch_size)
         state = torch.FloatTensor(state).to(self.device)
         action = torch.LongTensor(action).to(self.device)
@@ -89,11 +93,17 @@ class DQNAgent:
         next_state = torch.FloatTensor(next_state).to(self.device)
         done = torch.FloatTensor(done).to(self.device)
 
+        # Compute the Q-values for the current state-action pairs and the next states
         q_values = self.policy_net(state).gather(1, action.unsqueeze(1)).squeeze(1)
         next_q_values = self.target_net(next_state).max(1)[0]
+
+        # Compute the expected Q-values using the Bellman equation
         expected_q_values = reward + self.gamma * next_q_values * (1 - done)
 
+        # Compute the loss between the predicted Q-values and the expected Q-values
         loss = nn.MSELoss()(q_values, expected_q_values.detach())
+
+        # Update the weights of the policy network using backpropagation
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -105,20 +115,34 @@ class DQNAgent:
     def run(self, episodes):
         # Run the agent for a specified number of episodes
         for episode in range(episodes):
+            # Reset the environment for a new episode
             state = self.env.reset()
             done = False
             total_reward = 0
             while not done:
+                # Select an action using the epsilon-greedy strategy
                 action = self.select_action(state)
+
+                # Take a step in the environment with the selected action
                 next_state, reward, done, _ = self.env.step(action)
+
+                # Store the experience in the replay buffer
                 self.memory.push(state, action, reward, next_state, done)
-                state = next_state
-                total_reward += reward
+
+                # Train the network using a batch of experiences from the replay buffer
                 self.train()
 
+                # Update the current state and total reward
+                state = next_state
+                total_reward += reward
+
+            # Update the ε-greedy exploration rate
             self.epsilon = max(self.epsilon_min, self.epsilon_decay * self.epsilon)
+
+            # Update the target network with the weights of the policy network
             self.update_target_model()
 
+            # Print the episode number, the total reward, and the current ε-greedy exploration rate
             print('Episode: {}/{}, Total reward: {}, Epsilon: {:.2f}'
                   .format(episode+ 1, episodes, total_reward, self.epsilon))
 
