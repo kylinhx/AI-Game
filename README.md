@@ -10,13 +10,13 @@ This repository is aimed to training some AI playing all kinds of games. I will 
 
 Create your conda environment
 ```
-conda create -n AIGames python=3.10 -y
+conda create --name AIGame --file requirements.txt
 ```
 Activate your new nevironment
 ```
-conda activate AIGames
+conda activate AIGame
 ```
-Install necessary libraries 
+or
 ```
-pip install -r requirements.txt
+conda env create -f install.yaml
 ```
