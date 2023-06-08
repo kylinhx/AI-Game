@@ -11,6 +11,7 @@ class ENV(object):
                  window_size = (960,0,1920,700), 
                  self_blood_size = (960,0,1920,700),
                  enemy_blood_size = (960,0,1920,700),
+                 yolo_net = 'yolov8n',
                  ) -> None:
         # 窗口位置坐标
         self.window_size = window_size
@@ -18,6 +19,7 @@ class ENV(object):
         self.me_blood_size = self_blood_size
         self.enemy_blood_size = enemy_blood_size
 
+        self.net = yolo_net
         pass
     
     # step 继续读取图像，获得下一个state
@@ -25,8 +27,12 @@ class ENV(object):
         pass
     
     # 根据图像获得state
-    def get_state(self) -> None:
+    def get_state(self, x) -> None:
+        output = self.net
+        # 进行后处理
         pass
+        # 返回两个人之间的距离，以AI为中心，右边为正，左边为负
+        return x
     
     # 获得图像
     def get_img(self) -> None:
