@@ -133,9 +133,9 @@ class DQNAgent:
             while not done:
                 # Select an action using the epsilon-greedy strategy
                 action = self.select_action(state)
-
+                print(action)
                 # Take a step in the environment with the selected action
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done = self.env.step(action)
 
                 # Store the experience in the replay buffer
                 self.memory.push(state, action, reward, next_state, done)
@@ -176,6 +176,6 @@ if __name__ == "__main__":
 
     dqn_agent = DQNAgent(env)
 
-    dqn_agent.run(episodes=200)
+    dqn_agent.run(episodes=1)
 
         

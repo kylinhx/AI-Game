@@ -42,7 +42,7 @@ class ENV(object):
             action: 一个索引
         '''
 
-        done = False
+        done = self.check_env()
 
         # 采取行动
         self.action_space[action]()
@@ -53,7 +53,6 @@ class ENV(object):
         reword = self.reword
 
         return new_state, reword, done
-        pass
     
     # 根据图像获得state
     def get_state(self) -> None:
@@ -88,7 +87,8 @@ class ENV(object):
 
     # check函数
     def check_env(self) -> None:
-        pass
+        
+        return True
     
     # 根据截取的blood，返回blood情况
     def handle_blood_(self, blood_image) -> None:
