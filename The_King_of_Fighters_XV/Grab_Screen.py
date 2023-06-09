@@ -26,7 +26,8 @@ def grab_screen(region=None):
     signedIntsArray = bmp.GetBitmapBits(True)
     img = np.frombuffer(signedIntsArray, dtype='uint8')
     img.shape = (height, width, 4)
-
+    img = img[:, :, :3]
+    
     srcdc.DeleteDC()
     memdc.DeleteDC()
     win32gui.ReleaseDC(hwin, hwindc)

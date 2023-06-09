@@ -7,6 +7,13 @@ import torch.optim as optim
 import gym
 import cv2
 
+import time
+
+from ultralytics import YOLO
+from GameENV import ENV
+
+yolov8n_path = './The_King_of_Fighters_XV/model/best.pt'
+
 # Define the DQN network
 class DQN(nn.Module):
     def __init__(self, output_dim):
@@ -48,8 +55,10 @@ class DQNAgent:
     def __init__(self, env):
         # Initialize agent with environment
         self.env = env
-        self.input_dim = env.observation_space.shape[0]   # 获取状态空间维度
-        self.output_dim = env.action_space.n   # 获取行为空间维度
+
+        self.input_dim = env.observation_space   # 获取状态空间维度
+        self.output_dim = len(env.action_space)  # 获取行为空间维度
+
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')   # 检查是否有GPU
 
         # Define DQN networks and optimizer
@@ -71,12 +80,14 @@ class DQNAgent:
         # Choose an action using epsilon-greedy
         if np.random.rand() < self.epsilon:
             # Select a random action with probability ε
-            return self.env.action_space.sample()
+            return self.env.select_randomAction()
+        
         with torch.no_grad():
             # Select the action with the highest Q-value with probability (1-ε)
             state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
             q_values = self.policy_net(state)
             action = q_values.max(1)[1].item()
+        
         return action
 
     def train(self):
@@ -116,7 +127,7 @@ class DQNAgent:
         # Run the agent for a specified number of episodes
         for episode in range(episodes):
             # Reset the environment for a new episode
-            state = self.env.reset()
+            state = self.env.get_state()
             done = False
             total_reward = 0
             while not done:
@@ -146,9 +157,25 @@ class DQNAgent:
             print('Episode: {}/{}, Total reward: {}, Epsilon: {:.2f}'
                   .format(episode+ 1, episodes, total_reward, self.epsilon))
 
-# Create the CartPole environment
-env = gym.make('CartPole-v1')
+# # Create the CartPole environment
+# env = gym.make('CartPole-v1')
 
-# Create the DQN agent and run it
-dqn_agent = DQNAgent(env)
-dqn_agent.run(episodes=200)
+# # Create the DQN agent and run it
+# dqn_agent = DQNAgent(env)
+# dqn_agent.run(episodes=200)
+
+
+
+
+if __name__ == "__main__":
+    yolov8n = YOLO(yolov8n_path)
+    env = ENV(
+        window_size=(0,0,1920,1080),
+        yolo_net=yolov8n
+    )
+
+    dqn_agent = DQNAgent(env)
+
+    dqn_agent.run(episodes=200)
+
+        
