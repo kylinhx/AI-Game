@@ -65,13 +65,16 @@ class ENV(object):
         distance, Jing_bbox, Ann_bbox = self.handle_state_(window_img)
 
         # 根据血量变化来设置reword
-        self.reword = 0.6 * (self_blood_state - self.self_blood) + (self.enemy_blood - enemy_blood_state) * 0.4
+        reword = 0.5 * (self_blood_state - self.self_blood) + (self.enemy_blood - enemy_blood_state) * 10
+        
+        if reword != self.reword:
+            self.reword = reword
         # 更新自己和敌人的血量值
         self.self_blood = self_blood_state
         self.enemy_blood = enemy_blood_state
-
-
-        return (self_blood_state, enemy_blood_state, distance, Jing_bbox, Ann_bbox)
+        
+        tensor_data = torch.tensor([self_blood_state, enemy_blood_state, distance.item(), *Jing_bbox, *Ann_bbox])
+        return tensor_data
     
     # 获得图像
     def get_img(self) -> None:
@@ -88,7 +91,7 @@ class ENV(object):
     # check函数
     def check_env(self) -> None:
         
-        return True
+        return False
     
     # 根据截取的blood，返回blood情况
     def handle_blood_(self, blood_image) -> None:
@@ -125,6 +128,9 @@ class ENV(object):
             if result[0].boxes.xyxy.shape[0] == 2 & result[0].boxes.cls.shape[0] == 2:
                 if result[0].boxes.cls[0] != result[0].boxes.cls[1]:
                     break
+                else:
+                    window_img = grab_screen(region=self.window_size)
+                    result = self.net(window_img)
             else:
                 window_img = grab_screen(region=self.window_size)
                 result = self.net(window_img)
@@ -146,7 +152,7 @@ class ENV(object):
         return distance.view([1]), Jing_bbox, Ann_bbox
     
     def select_randomAction(self):
-        action_index = random.randint(0, 9)
+        action_index = random.randint(0, 8)
         return action_index
 
 

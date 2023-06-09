@@ -45,7 +45,13 @@ class ReplayBuffer:
     def sample(self, batch_size):
         # Sample a batch from the buffer
         batch = random.sample(self.buffer, batch_size)
-        state, action, reward, next_state, done = map(np.stack, zip(*batch))
+        # state, action, reward, next_state, done = map(lambda x: x.cpu().numpy(), zip(*batch))
+        # state, action, reward, next_state, done = map(lambda x: x.cuda(), zip(*batch))
+        print(batch)
+        print(type(batch))
+        
+        # state, action, reward, next_state, done = [torch.tensor(x).cuda() for x in zip(*batch)]
+        state, action, reward, next_state, done = [torch.tensor(x).squeeze().cuda().item() if torch.is_tensor(x) else x for x in zip(*batch)]
         return state, action, reward, next_state, done
 
     def __len__(self):
@@ -84,10 +90,12 @@ class DQNAgent:
         
         with torch.no_grad():
             # Select the action with the highest Q-value with probability (1-ε)
-            state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+            return self.env.select_randomAction()
+            print(state)
+            state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
             q_values = self.policy_net(state)
             action = q_values.max(1)[1].item()
-        
+
         return action
 
     def train(self):
@@ -114,6 +122,7 @@ class DQNAgent:
         # Compute the loss between the predicted Q-values and the expected Q-values
         loss = nn.MSELoss()(q_values, expected_q_values.detach())
 
+        print("train start")
         # Update the weights of the policy network using backpropagation
         self.optimizer.zero_grad()
         loss.backward()
@@ -133,7 +142,7 @@ class DQNAgent:
             while not done:
                 # Select an action using the epsilon-greedy strategy
                 action = self.select_action(state)
-                print(action)
+                print(f"action: {action}")
                 # Take a step in the environment with the selected action
                 next_state, reward, done = self.env.step(action)
 
@@ -142,7 +151,7 @@ class DQNAgent:
 
                 # Train the network using a batch of experiences from the replay buffer
                 self.train()
-
+                print("train done")
                 # Update the current state and total reward
                 state = next_state
                 total_reward += reward
@@ -171,11 +180,11 @@ if __name__ == "__main__":
     yolov8n = YOLO(yolov8n_path)
     env = ENV(
         window_size=(0,0,1920,1080),
+        self_blood_size=(205,110,885,123),
+        enemy_blood_size=(1035,110,1715,123),
         yolo_net=yolov8n
     )
 
     dqn_agent = DQNAgent(env)
 
-    dqn_agent.run(episodes=1)
-
-        
+    dqn_agent.run(episodes=100)
