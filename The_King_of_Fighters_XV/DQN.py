@@ -116,7 +116,7 @@ class DQNAgent:
         # Run the agent for a specified number of episodes
         for episode in range(episodes):
             # Reset the environment for a new episode
-            state = self.env.reset()
+            state = self.env.reset()[0] # sometimes returned state will be ([state_dim1, state_dim2...], {})
             done = False
             total_reward = 0
             while not done:
@@ -124,7 +124,7 @@ class DQNAgent:
                 action = self.select_action(state)
 
                 # Take a step in the environment with the selected action
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, _, _ = self.env.step(action)
 
                 # Store the experience in the replay buffer
                 self.memory.push(state, action, reward, next_state, done)

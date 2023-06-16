@@ -1,17 +1,18 @@
 import cv2
 import torch
 import numpy as np
-
+import gym
 from Grab_Screen import grab_screen
 
 # 交互环境类
-class ENV(object):
+class ENV(gym.Env):
 
     # 初始化函数
     def __init__(self, 
                  window_size = (960,0,1920,700), 
                  self_blood_size = (960,0,1920,700),
                  enemy_blood_size = (960,0,1920,700),
+                 
                  yolo_net = None,
                  ) -> None:
         
@@ -20,12 +21,16 @@ class ENV(object):
         # 血量位置坐标
         self.me_blood_size = self_blood_size
         self.enemy_blood_size = enemy_blood_size
+        # 胜负图标位置坐标,可根据window_size取相对位置
+        self.win_icon_size = window_size
+        # 游戏是否结束
+        self.done = False
 
         self.net = yolo_net
         pass
     
     # step 继续读取图像，获得下一个state
-    def step(self) -> None:
+    def step(self, action) -> None:
         pass
     
     # 根据图像获得state
@@ -45,12 +50,14 @@ class ENV(object):
         window_img = grab_screen(region=self.window_size)
         self_blood_img = grab_screen(region=self.me_blood_size)
         enemy_blood_img = grab_screen(region=self.enemy_blood_size)
+        win_icon_img = grab_screen(region=self.win_icon_size)
 
-        return window_img, self_blood_img, enemy_blood_img
+        return window_img, self_blood_img, enemy_blood_img, win_icon_img
         
-    # 初始化环境d
-    def init_env(self) -> None:
-        pass
+    # 重置环境d
+    def reset(self) -> None:
+        self.done = False
+        return # 初始环境
 
     # check函数
     def check_env(self) -> None:
@@ -99,9 +106,36 @@ class ENV(object):
 
         return distance.view([1]), Jing_bbox, Ann_bbox
     
+    def handle_result_(self, win_icon_img):
+        # 用opencv模板匹配的方式判断胜败
+        template_win = cv2.imread(r'./template/win.png', cv2.IMREAD_GRAYSCALE) # 胜败图标用程序截取，便于统一模板和观测图的大小
+        template_lose = cv2.imread(r'./template/lose.png', cv2.IMREAD_GRAYSCALE)
+        win_icon_img_gray = cv2.cvtColor(win_icon_img, cv2.COLOR_BGRA2GRAY)
+        match_threshold = 0.9
+        res_win = cv2.matchTemplate(win_icon_img_gray, template_win, cv2.TM_CCOEFF_NORMED)
+        res_lose = cv2.matchTemplate(win_icon_img_gray, template_lose, cv2.TM_CCOEFF_NORMED)
+        _, max_val_win, _, _ = cv2.minMaxLoc(res_win)
+        _, max_val_lose, _, _ = cv2.minMaxLoc(res_lose)
+
+        # 胜利返回1，失败返回-1
+        if max_val_win > match_threshold:
+            self.done = True
+            return 1
+        if max_val_lose > match_threshold:
+            self.done = True
+            return -1
+        # 平局返回0，不知道能不能平局，先写在这里
+        # if max_val_draw > match_threshold:
+        #     self.done = True
+        #     return 0
+        
+    
 
 if __name__ == "__main__":
     environment = ENV()
     window_img, self_blood_img, enemy_blood_img = environment.get_img()
-
+    cv2.imshow('window_img', window_img)
+    cv2.imshow('self_blood_img', self_blood_img)
+    cv2.imshow('enemy_blood_img', enemy_blood_img)
+    cv2.waitKey(0)
     print(type(window_img))
