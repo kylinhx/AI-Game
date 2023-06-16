@@ -2,7 +2,9 @@ import cv2
 import torch
 import numpy as np
 import gym
+from gym import spaces
 from Grab_Screen import grab_screen
+from direct_keys import *
 
 # 交互环境类
 class ENV(gym.Env):
@@ -26,27 +28,60 @@ class ENV(gym.Env):
         # 游戏是否结束
         self.done = False
 
+        # 生成数字到键盘输入的动作映射列表
+        self.action_map = self.get_action_map()
+        # 定义动作空间
+        self.action_space = self.get_action_space() # {0,1,2...,action_num-1}
+
+        # 定义状态空间
+        self.observation_space = self.get_observation_space_()
+
         self.net = yolo_net
         pass
+
+    # 生成状态空间,选手可自行重写
+    def get_observation_space(self):
+        pass
+
+    # 生成动作空间,选手可自行重写
+    def get_action_space(self):
+        return spaces.Discrete(len(self.action_map))
     
+    # 生成动作-键盘映射列表,选手可自行重写
+    def get_action_map(self):
+        return [Jump, 
+                Down, 
+                Left, 
+                Right, 
+                attack_light_rist, 
+                attack_heavy_rist, 
+                attack_light_legs,
+                attack_heavy_legs,
+                super]
+    
+    # 执行动作
+    def apply_action(self, action):
+        self.action_map[action]()
+
     # step 继续读取图像，获得下一个state
     def step(self, action) -> None:
         pass
     
     # 根据图像获得state
-    def get_state(self, x) -> None:
+    def get_state(self, x):
         # 获得图像
-        window_img, self_blood_img, enemy_blood_img = self.get_img()
+        window_img, self_blood_img, enemy_blood_img, win_icon_img = self.get_img()
         # 获得所有状态
-        self_blood_state = self.handle_blood_(self_blood_img)
-        enemy_blood_state = self.handle_blood_(enemy_blood_img)
+        self_blood_state = self.handle_blood_(self_blood_img) # 自身血量
+        enemy_blood_state = self.handle_blood_(enemy_blood_img) # 对手血量
         
-        distance, Jing_bbox, Ann_bbox = self.handle_state_(window_img)
+        distance, Jing_bbox, Ann_bbox = self.handle_state_(window_img) # 角色距离和bbox
+        game_result = self.handle_result_(win_icon_img) # 游戏是否胜利
 
-        return (self_blood_state, enemy_blood_state, distance, Jing_bbox, Ann_bbox)
+        return (self_blood_state, enemy_blood_state, distance, Jing_bbox, Ann_bbox, game_result)
     
     # 获得图像
-    def get_img(self) -> None:
+    def get_img(self):
         window_img = grab_screen(region=self.window_size)
         self_blood_img = grab_screen(region=self.me_blood_size)
         enemy_blood_img = grab_screen(region=self.enemy_blood_size)

@@ -124,7 +124,7 @@ class DQNAgent:
                 action = self.select_action(state)
 
                 # Take a step in the environment with the selected action
-                next_state, reward, done, _, _ = self.env.step(action)
+                next_state, reward, done = self.env.step(action)[0:3]
 
                 # Store the experience in the replay buffer
                 self.memory.push(state, action, reward, next_state, done)
