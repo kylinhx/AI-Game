@@ -1,8 +1,11 @@
                     w       h       xmin    ymin    normalized_w    normalized_h    normalized_xmin     normalized_ymin
 window size         2202    1239    \       \       \               \               \                   \
-self blood size     839     55      183     58      0.3810          0.0444          0.0831              0.0468
-enemy blood size    839     55      1185    58      0.3810          0.0444          0.5381              0.0468
-self defend size    336     36      606     111     0.1526          0.0291          0.2752              0.0896
-enemy defend size   336     36      1264    111     0.1526          0.0291          0.5740              0.0896
-self energy size    348     60      207     1127    0.1580          0.0484          0.0940              0.9096
-enemy energy size   348     60      1651    1127    0.1580          0.0484          0.7498              0.9096
+self blood size     825     19      189     73      0.3747          0.0153          0.0858              0.0589
+enemy blood size    825     19      1190    73      0.3747          0.0153          0.5404              0.0589
+self defend size    325     14      610     122     0.1476          0.0113          0.2770              0.0985
+enemy defend size   325     14      1267    122     0.1476          0.0113          0.5754              0.0985
+self energy size    340     17      210     1137    0.1544          0.0137          0.0954              0.9177
+enemy energy size   340     17      1651    1137    0.1544          0.0137          0.7498              0.9177
+
+blood_BGR_range = [165-175, 220-230, 30-42]
+blood_GRAY_range = 159-165
