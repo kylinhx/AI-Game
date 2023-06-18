@@ -1,5 +1,6 @@
 import cv2
 import torch
+import random
 import numpy as np
 import gym
 from gym import spaces
@@ -58,8 +59,10 @@ class ENV(gym.Env):
         # 定义状态空间
         self.observation_space = self.get_observation_space()
 
-        self.net = yolo_net
-        pass
+        # 初始化一些与reward相关的变量
+        self.reward = 0.0
+        self.self_blood = 1.0
+        self.enemy_blood = 1.0
 
     # 生成状态空间,选手可自行重写
     def get_observation_space(self):
@@ -87,10 +90,24 @@ class ENV(gym.Env):
 
     # step 继续读取图像，获得下一个state
     def step(self, action) -> None:
-        pass
+        '''
+            action: 一个索引
+        '''
+
+        done = self.check_env()
+
+        # 采取行动
+        self.apply_action(action)
+
+        # 获得新的状态
+        new_state = self.get_state()
+
+        reword = self.reword
+
+        return new_state, reword, done
     
     # 根据图像获得state
-    def get_state(self, x):
+    def get_state(self):
         # 获得图像
         (window_img, 
          self_blood_img, 
@@ -202,10 +219,25 @@ class ENV(gym.Env):
     # 根据截取的window，返回神经网络预测的feature
     def handle_state_(self, window_image) -> None:
 
+        '''
+        如果检测出来的不是一个Ann和一个Jing，就再次截图继续找，直到找到一个Jing和一个Ann
+        '''
+
         # 获得预测结果
         result = self.net(window_image)
 
-        # 获得cls和bbox的预测结果
+        # 检测是否是一个ann一个jing
+        while True:
+            if result[0].boxes.xyxy.shape[0] == 2 & result[0].boxes.cls.shape[0] == 2:
+                if result[0].boxes.cls[0] != result[0].boxes.cls[1]:
+                    break
+                else:
+                    window_img = grab_screen(region=self.window_size)
+                    result = self.net(window_img)
+            else:
+                window_img = grab_screen(region=self.window_size)
+                result = self.net(window_img)
+
         cls_result = result[0].boxes.cls
         xyxy_bbox_result = result[0].boxes.xyxy
 
@@ -214,48 +246,18 @@ class ENV(gym.Env):
         Jing_index = torch.nonzero(cls_result==0)
 
         # 获得Ann和JIng的bbox (xyxy格式)
-        Ann_bbox = xyxy_bbox_result[Ann_index].view([4])
-        Jing_bbox = xyxy_bbox_result[Jing_index].view([4])
+        Ann_bbox = xyxy_bbox_result[Ann_index][0].view([4])
+        Jing_bbox = xyxy_bbox_result[Jing_index][0].view([4])
 
         # 计算Ann和Jing之间的距离（以Jing为原点，直接计算差值并取平均值），正数的话就是ann在右，负数的话就是ann在左
         distance = torch.sum(Ann_bbox-Jing_bbox) / 2
 
         return distance.view([1]), Jing_bbox, Ann_bbox
     
-    def get_relative_size(self, relative_pos:list):
-        # 解析相对位置向量,返回left,top,right,bottom格式的元组
-        window_w = self.window_size[2]-self.window_size[0]
-        window_h = self.window_size[3]-self.window_size[1]
-        relative_size = (int(np.floor(self.window_size[0]+window_w*relative_pos[2])),
-                         int(np.floor(self.window_size[1]+window_h*relative_pos[3])),
-                         int(np.ceil(self.window_size[0]+window_w*relative_pos[2]+window_w*relative_pos[0])),
-                         int(np.ceil(self.window_size[1]+window_h*relative_pos[3]+window_h*relative_pos[1])))
-        return relative_size
+    def select_randomAction(self):
+        action_index = random.randint(0, 8)
+        return action_index
 
-
-    def handle_result_(self, win_icon_img):
-        # 用opencv模板匹配的方式判断胜败
-        template_win = cv2.imread(r'./template/win.png', cv2.IMREAD_GRAYSCALE) # 胜败图标用程序截取，便于统一模板和观测图的大小
-        template_lose = cv2.imread(r'./template/lose.png', cv2.IMREAD_GRAYSCALE)
-        win_icon_img_gray = cv2.cvtColor(win_icon_img, cv2.COLOR_BGRA2GRAY)
-        match_threshold = 0.9
-        res_win = cv2.matchTemplate(win_icon_img_gray, template_win, cv2.TM_CCOEFF_NORMED)
-        res_lose = cv2.matchTemplate(win_icon_img_gray, template_lose, cv2.TM_CCOEFF_NORMED)
-        _, max_val_win, _, _ = cv2.minMaxLoc(res_win)
-        _, max_val_lose, _, _ = cv2.minMaxLoc(res_lose)
-
-        # 胜利返回1，失败返回-1
-        if max_val_win > match_threshold:
-            self.done = True
-            return 1
-        if max_val_lose > match_threshold:
-            self.done = True
-            return -1
-        # 平局返回0，不知道能不能平局，先写在这里
-        # if max_val_draw > match_threshold:
-        #     self.done = True
-        #     return 0
-    
 
 if __name__ == "__main__":
     environment = ENV()
