@@ -62,7 +62,7 @@ class DQNAgent:
         # Initialize agent with environment
         self.env = env
 
-        self.input_dim = env.observation_space   # 获取状态空间维度
+        self.input_dim = len(env.observation_space)   # 获取状态空间维度
         self.output_dim = len(env.action_space)  # 获取行为空间维度
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')   # 检查是否有GPU
@@ -132,7 +132,7 @@ class DQNAgent:
         # Update the target network with the policy network's weights
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
-    def run(self, episodes):
+    def run(self, episodes, print_info=False):
         # Run the agent for a specified number of episodes
         for episode in range(episodes):
             # Reset the environment for a new episode
@@ -144,7 +144,9 @@ class DQNAgent:
                 action = self.select_action(state)
                 print(f"action: {action}")
                 # Take a step in the environment with the selected action
-                next_state, reward, done = self.env.step(action)
+                next_state, reward, done, info = self.env.step(action)
+                if print_info:
+                    print("INFO", info, '\n')
 
                 # Store the experience in the replay buffer
                 self.memory.push(state, action, reward, next_state, done)
@@ -180,8 +182,8 @@ if __name__ == "__main__":
     yolov8n = YOLO(yolov8n_path)
     env = ENV(
         window_size=(0,0,1920,1080),
-        self_blood_size=(205,110,885,123),
-        enemy_blood_size=(1035,110,1715,123),
+        # self_blood_size=(205,110,885,123),
+        # enemy_blood_size=(1035,110,1715,123),
         yolo_net=yolov8n
     )
 

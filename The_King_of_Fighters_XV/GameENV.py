@@ -59,14 +59,44 @@ class ENV(gym.Env):
         # 定义状态空间
         self.observation_space = self.get_observation_space()
 
-        # 初始化一些与reward相关的变量
-        self.reward = 0.0
-        self.self_blood = 1.0
-        self.enemy_blood = 1.0
+        # # 初始化一些与reward相关的变量
+        # self.reward = 0.0
+        # self.self_blood = 1.0
+        # self.enemy_blood = 1.0
 
+        # 计数器
+        self.step_num = 0
+
+    def get_relative_size(self, relative_pos:list):
+    # 解析相对位置向量,返回left,top,right,bottom格式的元组(屏幕全局坐标系下)
+        window_w = self.window_size[2]-self.window_size[0]
+        window_h = self.window_size[3]-self.window_size[1]
+        relative_size = (int(np.floor(self.window_size[0]+window_w*relative_pos[2])),
+                            int(np.floor(self.window_size[1]+window_h*relative_pos[3])),
+                            int(np.ceil(self.window_size[0]+window_w*relative_pos[2]+window_w*relative_pos[0])),
+                            int(np.ceil(self.window_size[1]+window_h*relative_pos[3]+window_h*relative_pos[1])))
+        return relative_size
+    
     # 生成状态空间,选手可自行重写
     def get_observation_space(self):
-        pass
+        
+        # 最大距离取窗口对角线长   
+        max_distance = np.sqrt(np.power(self.window_size[2]-self.window_size[0], 2) + np.power(self.window_size[3]-self.window_size[1], 2))
+        # 最大x，y坐标取窗口宽、高
+        max_box_x = self.window_size[2] - self.window_size[0]
+        max_box_y = self.window_size[3] - self.window_size[1]
+
+        #-------------------------------------------------------------------#
+        # 2023/6/19 Mshiro00
+        # 如果yolo有一瞬间没有检测到目标（比如开始和结束时），那么bbox返回值是什么？
+        # 以下low,high待定
+        #-------------------------------------------------------------------#
+
+        return spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, -max_distance, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.float32),
+                          high=np.array([1, 1, 1, 1, 1, 1, 
+                                         max_distance, 
+                                         max_box_x, max_box_y, max_box_x, max_box_y, 
+                                         max_box_x, max_box_y, max_box_x, max_box_y], dtype=np.float32))
 
     # 生成动作空间,选手可自行重写
     def get_action_space(self):
@@ -88,13 +118,15 @@ class ENV(gym.Env):
     def apply_action(self, action):
         self.action_map[action]()
 
+    # 当前reward函数, 暂时只返回1
+    def get_reward(self):
+        return 1
+
     # step 继续读取图像，获得下一个state
-    def step(self, action) -> None:
+    def step(self, action):
         '''
             action: 一个索引
         '''
-
-        done = self.check_env()
 
         # 采取行动
         self.apply_action(action)
@@ -102,9 +134,16 @@ class ENV(gym.Env):
         # 获得新的状态
         new_state = self.get_state()
 
-        reword = self.reword
+        # 获得reward
+        reward = self.get_reward()
 
-        return new_state, reword, done
+        # done = self.check_env()
+        done = self.is_done()
+
+        # 要返回的信息，没有可以不写
+        info = {}
+        
+        return new_state, reward, done, info
     
     # 根据图像获得state
     def get_state(self):
@@ -126,7 +165,7 @@ class ENV(gym.Env):
         enemy_energy_state = self.handle_blood_(enemy_energy_img) # 对手能量条        
         
         distance, Jing_bbox, Ann_bbox = self.handle_state_(window_img) # 角色距离和bbox
-        game_result = self.handle_result_(win_icon_img) # 游戏是否胜利
+        # game_result = self.handle_result_(win_icon_img) # 游戏是否胜利
 
         return (self_blood_state, 
                 enemy_blood_state, 
@@ -135,9 +174,10 @@ class ENV(gym.Env):
                 self_energy_state,
                 enemy_energy_state,
                 distance, 
-                Jing_bbox, 
-                Ann_bbox, 
-                game_result)
+                Jing_bbox, # (4,)
+                Ann_bbox # (4,)
+                # game_result # 暂时不在获取状态时输出游戏结果
+                )
     
     # 获得图像
     def get_img(self):
@@ -160,13 +200,21 @@ class ENV(gym.Env):
                 win_icon_img)
         
     # 重置环境d
-    def reset(self) -> None:
+    def reset(self):
         self.done = False
         return # 初始环境
 
     # check函数
-    def check_env(self) -> None:
+    def check_env(self):
         pass
+
+    # 判断结束
+    #------------------------------------------------#
+    # 2023/6/19 Mshiro00
+    # 如何判断结束待定，先固定done=False
+    #------------------------------------------------#
+    def is_done(self):
+        return False
     
     # 根据截取的blood，返回blood情况
     @staticmethod
@@ -222,6 +270,10 @@ class ENV(gym.Env):
         '''
         如果检测出来的不是一个Ann和一个Jing，就再次截图继续找，直到找到一个Jing和一个Ann
         '''
+        #--------------------------------------------------------------#
+        # 2023/6/19 Mshiro00
+        # xyxy形式的bbox不适合作为状态输出，建议改为中心坐标+宽高的local形式
+        #--------------------------------------------------------------#
 
         # 获得预测结果
         result = self.net(window_image)
@@ -255,26 +307,28 @@ class ENV(gym.Env):
         return distance.view([1]), Jing_bbox, Ann_bbox
     
     def select_randomAction(self):
-        action_index = random.randint(0, 8)
+        action_index = random.randint(0, len(self.action_map))
         return action_index
 
 
 if __name__ == "__main__":
     environment = ENV()
-    (window_img, 
-     self_blood_img, 
-     enemy_blood_img, 
-     self_defend_img, 
-     enemy_defend_img, 
-     self_energy_img, 
-     enemy_energy_img, 
-     win_icon_img) = environment.get_img()
-    cv2.imshow('window_img', window_img)
-    cv2.imshow('self_blood_img', self_blood_img)
-    cv2.imshow('enemy_blood_img', enemy_blood_img)
-    cv2.imshow('self_defend_img', self_defend_img)
-    cv2.imshow('enemy_defend_img', enemy_defend_img)
-    cv2.imshow('self_energy_img', self_energy_img)
-    cv2.imshow('enemy_energy_img', enemy_energy_img)
-    cv2.waitKey(0)
-    print(type(window_img))
+    # (window_img, 
+    #  self_blood_img, 
+    #  enemy_blood_img, 
+    #  self_defend_img, 
+    #  enemy_defend_img, 
+    #  self_energy_img, 
+    #  enemy_energy_img, 
+    #  win_icon_img) = environment.get_img()
+    # cv2.imshow('window_img', window_img)
+    # cv2.imshow('self_blood_img', self_blood_img)
+    # cv2.imshow('enemy_blood_img', enemy_blood_img)
+    # cv2.imshow('self_defend_img', self_defend_img)
+    # cv2.imshow('enemy_defend_img', enemy_defend_img)
+    # cv2.imshow('self_energy_img', self_energy_img)
+    # cv2.imshow('enemy_energy_img', enemy_energy_img)
+    # cv2.waitKey(0)
+    # print(type(window_img))
+
+    print(environment.get_observation_space().sample())
