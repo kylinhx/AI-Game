@@ -21,7 +21,7 @@ def get_point(event, x, y, flags, param):
 def handle_blood_(blood_image):
     # 判断绿色通道灰度值计算血量
     image_g = blood_image[:,:,1]
-    threshold_value = 215 # 阈值可以根据应用程序的需求进行调整
+    threshold_value = 110 # 阈值可以根据应用程序的需求进行调整
     ret, bw_img = cv2.threshold(image_g, threshold_value, 255, cv2.THRESH_TOZERO)
 
     # bw_img是二值化图像
@@ -63,11 +63,11 @@ def handle_energy_(energy_image):
     return white_ratio, bw_img
 
 if __name__ == "__main__":
-    image = cv2.imread(r'temp_del_after_dev\energy_img.png')
+    image = cv2.imread(r'temp_del_after_dev\blood_img3.png')
     # image = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
 
     # 定义窗口 并绑定事件 传入各自对应的参数
-    cv2.namedWindow('image', cv2.WINDOW_KEEPRATIO)
+    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.setMouseCallback('image', get_point, image)
 
     # 显示图像
@@ -76,7 +76,9 @@ if __name__ == "__main__":
         if cv2.waitKey(20) & 0xFF == 27:
             break
 
-    # print(handle_blood_(image)[0])
-    print(handle_energy_(image)[0])
-    cv2.imshow('', handle_energy_(image)[1])
+    print(handle_blood_(image)[0])
+    cv2.imshow('', handle_blood_(image)[1])
+
+    # print(handle_energy_(image)[0])
+    # cv2.imshow('', handle_energy_(image)[1])
     cv2.waitKey(0)

@@ -221,7 +221,7 @@ class ENV(gym.Env):
     def handle_blood_(blood_image):
         # 判断绿色通道灰度值计算血量
         image_g = blood_image[:,:,1]
-        threshold_value = 215 # 阈值可以根据应用程序的需求进行调整
+        threshold_value = 110 # 阈值可以根据应用程序的需求进行调整
         ret, bw_img = cv2.threshold(image_g, threshold_value, 255, cv2.THRESH_TOZERO)
 
         # bw_img是二值化图像
