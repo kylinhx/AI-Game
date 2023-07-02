@@ -1,11 +1,13 @@
-                    w       h       xmin    ymin    normalized_w    normalized_h    normalized_xmin     normalized_ymin
-window size         2202    1239    \       \       \               \               \                   \
-self blood size     825     19      189     73      0.3747          0.0153          0.0858              0.0589
-enemy blood size    825     19      1190    73      0.3747          0.0153          0.5404              0.0589
-self defend size    325     14      610     122     0.1476          0.0113          0.2770              0.0985
-enemy defend size   325     14      1267    122     0.1476          0.0113          0.5754              0.0985
-self energy size    340     17      210     1137    0.1544          0.0137          0.0954              0.9177
-enemy energy size   340     17      1651    1137    0.1544          0.0137          0.7498              0.9177
+                        w       h       xmin    ymin    normalized_w    normalized_h    normalized_xmin     normalized_ymin
+window size             2202    1239    \       \       \               \               \                   \
+self blood size         825     19      189     73      0.3747          0.0153          0.0858              0.0589
+enemy blood size        825     19      1190    73      0.3747          0.0153          0.5404              0.0589
+self defend size        325     14      610     122     0.1476          0.0113          0.2770              0.0985
+enemy defend size       325     14      1267    122     0.1476          0.0113          0.5754              0.0985
+self energy size        340     17      210     1137    0.1544          0.0137          0.0954              0.9177
+self energy num size    91      122     107     1076    0.0413          0.0985          0.0486              0.8684
+enemy energy size       340     17      1651    1137    0.1544          0.0137          0.7498              0.9177
+enemy energy num size   91      122     2008    1076    0.0413          0.0985          0.9119              0.8684
 
 blood_BGR_range = [165-175, 220-230, 30-42]
 blood_GRAY_range = 159-165
