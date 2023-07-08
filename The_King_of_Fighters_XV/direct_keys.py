@@ -141,39 +141,6 @@ def attack_heavy_legs():
     time.sleep(0.05)
     ReleaseKey(K)
 
-# 终结技
-def super():
-    PressKey(S)
-    time.sleep(0.05)
-    ReleaseKey(S)
-
-    PressKey(A)
-    PressKey(S)
-    time.sleep(0.05)
-
-    PressKey(A)
-    time.sleep(0.05)
-    ReleaseKey(A)
-
-    PressKey(A)
-    PressKey(S)
-    time.sleep(0.1)
-
-    PressKey(S)
-    time.sleep(0.05)
-    ReleaseKey(S)
-
-    PressKey(D)
-    PressKey(S)
-    time.sleep(0.05)
-
-    PressKey(D)
-    time.sleep(0.05)
-    ReleaseKey(D)
-
-    PressKey(I)
-    time.sleep(0.05)
-    ReleaseKey(I)
 
 if __name__ == '__main__':
     time.sleep(5)

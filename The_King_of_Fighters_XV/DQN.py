@@ -12,7 +12,8 @@ import time
 from ultralytics import YOLO
 from GameENV import ENV
 
-yolov8n_path = './The_King_of_Fighters_XV/model/best.pt'
+bbox_detector_path = './The_King_of_Fighters_XV/model/bbox_detector.pt'
+Action_detector_path = './The_King_of_Fighters_XV/model/action_detector.pt'
 
 # Define the DQN network
 class DQN(nn.Module):
@@ -62,8 +63,8 @@ class DQNAgent:
         # Initialize agent with environment
         self.env = env
 
-        self.input_dim = env.observation_space   # 获取状态空间维度
-        self.output_dim = len(env.action_space)  # 获取行为空间维度
+        self.input_dim = 15   # 获取状态空间维度
+        self.output_dim = env.action_space.n # 获取行为空间维度
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')   # 检查是否有GPU
 
@@ -79,7 +80,7 @@ class DQNAgent:
         self.epsilon = 1.0   # ε-greedy策略的初始探索率
         self.epsilon_min = 0.01   # ε-greedy策略的最小探索率
         self.epsilon_decay = 0.995   # ε-greedy策略的探索率衰减因子
-        self.batch_size = 128   # 批量大小
+        self.batch_size = 16   # 批量大小
         self.memory = ReplayBuffer(10000)   # 创建经验回放缓冲区
 
     def select_action(self, state):
@@ -90,10 +91,10 @@ class DQNAgent:
         
         with torch.no_grad():
             # Select the action with the highest Q-value with probability (1-ε)
-            return self.env.select_randomAction()
-            print(state)
+            # return self.env.select_randomAction()
+            # print(state)
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            q_values = self.policy_net(state)
+            q_values = self.policy_net(state.view(self.batch_size,3,self.input_dim//3,1))
             action = q_values.max(1)[1].item()
 
         return action
@@ -113,10 +114,10 @@ class DQNAgent:
         done = torch.FloatTensor(done).to(self.device)
 
         # Compute the Q-values for the current state-action pairs and the next states
-        q_values = self.policy_net(state).gather(1, action.unsqueeze(1)).squeeze(1)
-        next_q_values = self.target_net(next_state).max(1)[0]
+        q_values = self.policy_net(state.view(self.batch_size,3,self.input_dim//3,1)).gather(1, action.unsqueeze(1)).squeeze(1)
+        next_q_values = self.target_net(next_state.view(self.batch_size,3,self.input_dim//3,1)).max(1)[0]
 
-        # Compute the expected Q-values using the Bellman equation
+        # Compute the expected Q-values using the Bellman equationd
         expected_q_values = reward + self.gamma * next_q_values * (1 - done)
 
         # Compute the loss between the predicted Q-values and the expected Q-values
@@ -177,14 +178,15 @@ class DQNAgent:
 
 
 if __name__ == "__main__":
-    yolov8n = YOLO(yolov8n_path)
+    Box_detector = YOLO(bbox_detector_path)
+    Action_detector = YOLO(Action_detector_path)
+
     env = ENV(
-        window_size=(0,0,1920,1080),
-        self_blood_size=(205,110,885,123),
-        enemy_blood_size=(1035,110,1715,123),
-        yolo_net=yolov8n
+        window_size=(0,0,1050,740),
+        bbox_detector = Box_detector,
+        action_detector = Action_detector,
     )
 
     dqn_agent = DQNAgent(env)
 
-    dqn_agent.run(episodes=100)
+    dqn_agent.run(episodes=2)
