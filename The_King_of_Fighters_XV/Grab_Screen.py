@@ -38,10 +38,9 @@ def grab_screen(region=None):
 if __name__ == "__main__":
 
     
-
     # 调用grab_screen()函数获取截图
     # img = grab_screen(region=(88,121,481,125))
-    img = grab_screen(region=(88,124,481,129))
+    img = grab_screen(region=(0,0,1050,740))
     # 创建一个名为'Screen'的窗口
     cv2.namedWindow('Screen')
     # 将BGR格式的图像转换为RGB格式

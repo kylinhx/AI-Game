@@ -51,6 +51,9 @@ h_enemy_energy= 631 - 626
 x_enemy_energy= 789
 y_enemy_energy= 626
 
+def calculate_roi():
+    return
+
 if __name__ == "__main__":
     # caculate relative roi
     # [w, h, xmin, ymin]

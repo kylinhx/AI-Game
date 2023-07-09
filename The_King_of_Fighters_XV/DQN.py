@@ -94,7 +94,7 @@ class DQNAgent:
             # return self.env.select_randomAction()
             # print(state)
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            q_values = self.policy_net(state.view(self.batch_size,3,self.input_dim//3,1))
+            q_values = self.policy_net(state.view(-1,3,self.input_dim//3, 1))
             action = q_values.max(1)[1].item()
 
         return action
@@ -114,8 +114,9 @@ class DQNAgent:
         done = torch.FloatTensor(done).to(self.device)
 
         # Compute the Q-values for the current state-action pairs and the next states
-        q_values = self.policy_net(state.view(self.batch_size,3,self.input_dim//3,1)).gather(1, action.unsqueeze(1)).squeeze(1)
-        next_q_values = self.target_net(next_state.view(self.batch_size,3,self.input_dim//3,1)).max(1)[0]
+        print(state.shape)
+        q_values = self.policy_net(state.view(-1,3,self.input_dim//3,1)).gather(1, action.unsqueeze(1)).squeeze(1)
+        next_q_values = self.target_net(next_state.view(-1,3,self.input_dim//3,1)).max(1)[0]
 
         # Compute the expected Q-values using the Bellman equationd
         expected_q_values = reward + self.gamma * next_q_values * (1 - done)
@@ -167,26 +168,17 @@ class DQNAgent:
             print('Episode: {}/{}, Total reward: {}, Epsilon: {:.2f}'
                   .format(episode+ 1, episodes, total_reward, self.epsilon))
 
-# # Create the CartPole environment
-# env = gym.make('CartPole-v1')
-
-# # Create the DQN agent and run it
-# dqn_agent = DQNAgent(env)
-# dqn_agent.run(episodes=200)
-
-
-
 
 if __name__ == "__main__":
     Box_detector = YOLO(bbox_detector_path)
     Action_detector = YOLO(Action_detector_path)
 
     env = ENV(
-        window_size=(0,0,1050,740),
+        window_size=(0,0,1050,720),
         bbox_detector = Box_detector,
         action_detector = Action_detector,
     )
 
     dqn_agent = DQNAgent(env)
 
-    dqn_agent.run(episodes=2)
+    dqn_agent.run(episodes=1)

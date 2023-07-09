@@ -93,10 +93,11 @@ class ENV(gym.Env):
     # 解析相对位置向量,返回left,top,right,bottom格式的元组(屏幕全局坐标系下)
         window_w = self.window_size[2]-self.window_size[0]
         window_h = self.window_size[3]-self.window_size[1]
-        relative_size = (int(np.floor(self.window_size[0]+window_w*relative_pos[2])),
-                            int(np.floor(self.window_size[1]+window_h*relative_pos[3])),
-                            int(np.ceil(self.window_size[0]+window_w*relative_pos[2]+window_w*relative_pos[0])),
-                            int(np.ceil(self.window_size[1]+window_h*relative_pos[3]+window_h*relative_pos[1])))
+        relative_size = (int(relative_pos[2]*window_w), 
+                         int(relative_pos[3]*window_h),
+                         int(relative_pos[0]*window_w) + int(relative_pos[2]*window_w),
+                         int(relative_pos[1]*window_h) + int(relative_pos[3]*window_h))
+        print(relative_size)
         return relative_size
     
     # 加载能量条数字模板
@@ -140,11 +141,18 @@ class ENV(gym.Env):
                 attack_light_rist, 
                 attack_heavy_rist, 
                 attack_light_legs,
-                attack_heavy_legs]
+                attack_heavy_legs,
+                attack_1,
+                attack_2,
+                attack_3,
+                attack_4,
+                attack_5,
+                attack_6]
     
     # 执行动作
     def apply_action(self, action):
         self.action_map[action]()
+        time.sleep(0.05)
 
     # 当前reward函数, 暂时只返回1
     def get_reward(self):
@@ -166,22 +174,20 @@ class ENV(gym.Env):
         # 采取行动
         self.apply_action(action)
 
-        # done = self.check_env()
-        done = self.is_done()
-
+        
 
         # 获得新的状态
-        if done == False:
-            new_state = self.get_state()
-        else:
-            new_state = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], dtype=np.float32)
-        
+
+        new_state = self.get_state()
         # 获得reward
         reward = self.get_reward()
 
         # 要返回的信息，没有可以不写
         # info = {}
+        # done = self.check_env()
         
+        done = self.is_done()
+
         return new_state, reward, done
     
     # 根据图像获得state
@@ -290,9 +296,10 @@ class ENV(gym.Env):
     # 如何判断结束待定，先固定done=False
     #------------------------------------------------#
     def is_done(self):
-        if self.self_blood_state <= 0.12:
+        if self.self_blood_state <= 0.012:
+            print(self.self_blood_state)
             return True
-        elif self.enemy_blood_state <=0.12:
+        elif self.enemy_blood_state <=0.012:
             return True
         else:
             return False
