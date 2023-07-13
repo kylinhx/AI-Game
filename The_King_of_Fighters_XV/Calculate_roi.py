@@ -1,55 +1,55 @@
 
 # 定义窗口长宽
-w = 1050
-h = 720
+w = 990
+h = 560
 
 # self_blood长宽
-w_self_blood = 481-88
-h_self_blood = 125-121
-x_self_blood = 88
-y_self_blood= 121
+w_self_blood = 460-115
+h_self_blood = 78-72
+x_self_blood = 115
+y_self_blood = 72
 
 # enemy_blood长宽
-w_enemy_blood = 961-568
-h_enemy_blood = 125-121
-x_enemy_blood = 568
-y_enemy_blood = 121
+w_enemy_blood = 879 - 534
+h_enemy_blood = 78 - 72
+x_enemy_blood = 534
+y_enemy_blood = 72
 
 # self_defind长宽
-w_self_defend= 445-292
-h_self_defend= 145-142
-x_self_defend= 292
-y_self_defend= 142
+w_self_defend= 440-299
+h_self_defend= 98-96
+x_self_defend= 299
+y_self_defend= 96
 
 # enemy_defind长宽
-w_enemy_defend= 759-606
-h_enemy_defend= 145-142
-x_enemy_defend= 606
-y_enemy_defend= 142
+w_enemy_defend= 724-583
+h_enemy_defend= 98-96
+x_enemy_defend= 583
+y_enemy_defend= 96
 
 # self_energy_number长宽
-w_self_energy_number= 91 - 51
-h_self_energy_number= 655 - 597
-x_self_energy_number= 51
-y_self_energy_number= 597
+w_self_energy_number= 114 - 80
+h_self_energy_number= 543 - 492
+x_self_energy_number= 80
+y_self_energy_number= 492
 
 # enemy_energy_number长宽
-w_enemy_energy_number= 1001 - 961
-h_enemy_energy_number= 655 - 597
-x_enemy_energy_number= 961
-y_enemy_energy_number= 597
+w_enemy_energy_number= 912-879
+h_enemy_energy_number= 542-493
+x_enemy_energy_number= 879
+y_enemy_energy_number= 493
 
 # self_energy长宽
-w_self_energy= 263 - 99
-h_self_energy= 631 - 626
-x_self_energy= 99
-y_self_energy= 626
+w_self_energy= 271 - 127
+h_self_energy= 545 - 538
+x_self_energy= 127
+y_self_energy= 538
 
 # enemy_energy长宽
-w_enemy_energy= 950 - 789
-h_enemy_energy= 631 - 626
-x_enemy_energy= 789
-y_enemy_energy= 626
+w_enemy_energy= 897 - 751
+h_enemy_energy= 545 - 538
+x_enemy_energy= 751
+y_enemy_energy= 538
 
 def calculate_roi():
     return

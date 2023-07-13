@@ -219,5 +219,42 @@ def attack_6():
     time.sleep(0.015)
     ReleaseKey(U)
 
+def supper_1():
+    PressKey(S)
+    time.sleep(0.015)
+    ReleaseKey(S)
+
+    PressKey(A)
+    time.sleep(0.015)
+    ReleaseKey(A)
+
+    PressKey(D)
+    time.sleep(0.015)
+    ReleaseKey(D)
+
+    PressKey(U)
+    time.sleep(0.015)
+    ReleaseKey(U)
+
+def supper_2():
+    PressKey(S)
+    time.sleep(0.015)
+    ReleaseKey(S)
+
+    PressKey(A)
+    time.sleep(0.015)
+    ReleaseKey(A)
+
+    PressKey(D)
+    time.sleep(0.015)
+    ReleaseKey(D)
+
+    PressKey(K)
+    time.sleep(0.015)
+    ReleaseKey(K)
+
 if __name__ == '__main__':
-    time.sleep(5)
+    # while True:
+    #     supper_2()
+    #     time.sleep(0.015*4)
+    pass
