@@ -8,7 +8,7 @@ import gym
 from gym import spaces
 from Grab_Screen import grab_screen
 from direct_keys import *
-from process_control import *
+from utils import *
 
 
 # 交互环境类
