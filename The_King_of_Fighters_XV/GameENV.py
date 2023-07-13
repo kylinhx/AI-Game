@@ -8,6 +8,7 @@ import gym
 from gym import spaces
 from Grab_Screen import grab_screen
 from direct_keys import *
+from process_control import *
 
 
 # 交互环境类
@@ -32,6 +33,7 @@ class ENV(gym.Env):
 
         #------------------------战斗界面ROI位置信息-----------------------#
         # [w, h, xmin, ymin]
+
         self_blood_roi = [0.3484848484848485, 0.010714285714285714, 0.11616161616161616, 0.12857142857142856]
         enemy_blood_roi = [0.3484848484848485, 0.010714285714285714, 0.5393939393939394, 0.12857142857142856]
         self_defend_roi = [0.14242424242424243, 0.0035714285714285713, 0.302020202020202, 0.17142857142857143]
@@ -42,7 +44,7 @@ class ENV(gym.Env):
         enemy_energy_number_roi = [0.03333333333333333, 0.0875, 0.8878787878787879, 0.8803571428571428]
 
         # 胜负判定图标有些模糊, 暂时搁置
-        #----------------------------------------------------------------#
+
 
         # 窗口位置坐标
         self.window_size = window_size
@@ -62,6 +64,11 @@ class ENV(gym.Env):
         self.win_icon_size = window_size
         # 游戏是否结束
         self.done = False
+        # 劣势方flag(-1表示己方劣势，1表示敌方劣势，0表示相当)
+        # 用于协助胜负判断
+        self.situation = 0
+        # 是否获胜
+        self.win = None
 
         # 生成数字到键盘输入的动作映射列表
         self.action_map = self.get_action_map()
@@ -192,6 +199,14 @@ class ENV(gym.Env):
         # done = self.check_env()
         
         done = self.is_done()
+        self.done = done
+        
+        # 判断是否获胜
+        if done:
+            self.win = is_win(self.situation) # 只有结束时才会判断胜利，否则self.win初始化为None
+            
+        # 如获胜可以对reward进行处理
+        # ...
 
         return new_state, reward, done
     
@@ -217,6 +232,12 @@ class ENV(gym.Env):
         enemy_defend_state = self.handle_defend_(enemy_defend_img) # 对手防御条
         self_energy_state = self.handle_energy_(self_energy_img, self_energy_number_img) # 自身能量条
         enemy_energy_state = self.handle_energy_(enemy_energy_img, enemy_energy_number_img) # 对手能量条        
+        
+        # 更新优劣势flag(该flag仅用于胜负判断，不应出现在返回值中), 血量相等或一方血量低于2%则保持原situation
+        if self.self_blood_state > self.enemy_blood_state and self.self_blood_state > 0.02 and self.enemy_blood_state > 0.02:
+            self.situation = 1
+        elif self.self_blood_state < self.enemy_blood_state and self.self_blood_state > 0.02 and self.enemy_blood_state > 0.02:
+            self.situation = -1
         
         distance, Jing_bbox, Ann_bbox = self.handle_state_(window_img) # 角色距离和bbox
 
@@ -282,13 +303,31 @@ class ENV(gym.Env):
                 win_icon_img)
         
     # 重置环境d
+    # 一局判断结束后开始执行重置，键盘不断输入ENTER直到加载界面出现
+    # 加载界面结束后return
     def reset(self):
-        if self.self_blood_state <= 0.0001:
-            self.done = True
-        elif self.enemy_blood_state <=0.0001:
-            self.done = True
-        else:
-            self.done = False
+        self.done = False
+        self.situation = 0
+        self.win = None
+        while True:
+            window_img = grab_screen(region=self.window_size)
+            PressKey(ENTER)
+            time.sleep(0.02)
+            ReleaseKey(ENTER)
+            if is_loading(window_img):
+                break
+        time.sleep(1)
+        while True:
+            window_img = grab_screen(region=self.window_size)
+            if not is_loading(window_img):
+                break
+            time.sleep(0.02)
+        # if self.self_blood_state <= 0.0001:
+        #     self.done = True
+        # elif self.enemy_blood_state <=0.0001:
+        #     self.done = True
+        # else:
+        #     self.done = False
         return # 初始环境
 
     # check函数
