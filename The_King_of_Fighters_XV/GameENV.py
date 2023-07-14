@@ -9,15 +9,15 @@ from gym import spaces
 from Grab_Screen import grab_screen
 from direct_keys import *
 from utils import *
-
+from number_rec import NumberRec
 
 # 交互环境类
 class ENV(gym.Env):
 
     # 初始化函数
     def __init__(self, 
-                 window_size = (0,0,990,560),
-                # window_size = (960,0,1920,700), 
+                 #window_size = (0,0,990,560),
+                window_size = (0,360,1279,1079), 
                 # self_blood_size = (960,0,1920,700),
                 # enemy_blood_size = (960,0,1920,700),
                 # self_defend_size = (960,0,1920,700),
@@ -26,25 +26,33 @@ class ENV(gym.Env):
                 # enemy_energy_size = (960,0,1920,700),
                 bbox_detector = None,
                 action_detector = None,
+                number_recognizer = None
                 ) -> None:
         #----------------------------CV模型信息----------------------------#
         self.box_detector = bbox_detector
         self.action_detector = action_detector
-
+        self.number_recognizer = number_recognizer
         #------------------------战斗界面ROI位置信息-----------------------#
         # [w, h, xmin, ymin]
 
-        self_blood_roi = [0.3484848484848485, 0.010714285714285714, 0.11616161616161616, 0.12857142857142856]
-        enemy_blood_roi = [0.3484848484848485, 0.010714285714285714, 0.5393939393939394, 0.12857142857142856]
-        self_defend_roi = [0.14242424242424243, 0.0035714285714285713, 0.302020202020202, 0.17142857142857143]
-        enemy_defend_roi = [0.14242424242424243, 0.0035714285714285713, 0.5888888888888889, 0.17142857142857143] 
-        self_energy_roi =  [0.14545454545454545, 0.0125, 0.12828282828282828, 0.9607142857142857]
-        self_energy_number_roi = [0.03434343434343434, 0.09107142857142857, 0.08080808080808081, 0.8803571428571428]
-        enemy_energy_roi = [0.14747474747474748, 0.0125, 0.7585858585858586, 0.9607142857142857]
-        enemy_energy_number_roi = [0.03333333333333333, 0.0875, 0.8878787878787879, 0.8803571428571428]
-
-        # 胜负判定图标有些模糊, 暂时搁置
-
+        # self_blood_roi = [0.3484848484848485, 0.010714285714285714, 0.11616161616161616, 0.12857142857142856]
+        # enemy_blood_roi = [0.3484848484848485, 0.010714285714285714, 0.5393939393939394, 0.12857142857142856]
+        # self_defend_roi = [0.14242424242424243, 0.0035714285714285713, 0.302020202020202, 0.17142857142857143]
+        # enemy_defend_roi = [0.14242424242424243, 0.0035714285714285713, 0.5888888888888889, 0.17142857142857143] 
+        # self_energy_roi =  [0.14545454545454545, 0.0125, 0.12828282828282828, 0.9607142857142857]
+        # self_energy_number_roi = [0.03434343434343434, 0.09107142857142857, 0.08080808080808081, 0.8803571428571428]
+        # enemy_energy_roi = [0.14747474747474748, 0.0125, 0.7585858585858586, 0.9607142857142857]
+        # enemy_energy_number_roi = [0.03333333333333333, 0.0875, 0.8878787878787879, 0.8803571428571428]
+        self_blood_roi = [0.3747, 0.0153, 0.0858, 0.0589]
+        enemy_blood_roi = [0.3747, 0.0153, 0.5404, 0.0589]
+        self_defend_roi = [0.1476, 0.0113, 0.2770, 0.0985]
+        enemy_defend_roi = [0.1476, 0.0113, 0.5754, 0.0985]
+        self_energy_roi = [0.1544, 0.0137, 0.0954, 0.9177]
+        self_energy_number_roi = [0.0413, 0.0985, 0.0486, 0.8684]
+        enemy_energy_roi = [0.1544, 0.0137, 0.7498, 0.9177]
+        enemy_energy_number_roi = [0.0413, 0.0985, 0.9119, 0.8684]
+        time_sec1_roi = [0.02423768569, 0.08344923505, 0.4753713839, 0.04172461752]
+        time_sec2_roi = [0.02423768569, 0.08344923505, 0.4996090696, 0.04172461752]
 
         # 窗口位置坐标
         self.window_size = window_size
@@ -60,8 +68,10 @@ class ENV(gym.Env):
         # 能量条数字位置
         self.self_energy_number_size = self.get_relative_size(self_energy_number_roi)
         self.enemy_energy_number_size = self.get_relative_size(enemy_energy_number_roi)       
-        # 胜负图标位置坐标, 根据window_size取相对位置
-        self.win_icon_size = window_size
+        # # 胜负图标位置坐标, 根据window_size取相对位置
+        # self.win_icon_size = window_size
+        self.time_number1_size = self.get_relative_size(time_sec1_roi)
+        self.time_number2_size = self.get_relative_size(time_sec2_roi)
         # 游戏是否结束
         self.done = False
         # 劣势方flag(-1表示己方劣势，1表示敌方劣势，0表示相当)
@@ -100,10 +110,14 @@ class ENV(gym.Env):
     # 解析相对位置向量,返回left,top,right,bottom格式的元组(屏幕全局坐标系下)
         window_w = self.window_size[2]-self.window_size[0]
         window_h = self.window_size[3]-self.window_size[1]
-        relative_size = (int(relative_pos[2]*window_w), 
-                         int(relative_pos[3]*window_h),
-                         int(relative_pos[0]*window_w) + int(relative_pos[2]*window_w),
-                         int(relative_pos[1]*window_h) + int(relative_pos[3]*window_h))
+        # relative_size = (int(relative_pos[2]*window_w), 
+        #                  int(relative_pos[3]*window_h),
+        #                  int(relative_pos[0]*window_w) + int(relative_pos[2]*window_w),
+        #                  int(relative_pos[1]*window_h) + int(relative_pos[3]*window_h))
+        relative_size = (int(relative_pos[2]*window_w) + self.window_size[0], 
+                         int(relative_pos[3]*window_h) + self.window_size[1],
+                         int(relative_pos[0]*window_w) + int(relative_pos[2]*window_w) + self.window_size[0],
+                         int(relative_pos[1]*window_h) + int(relative_pos[3]*window_h) + self.window_size[1])       
         print(relative_size)
         return relative_size
     
@@ -222,7 +236,8 @@ class ENV(gym.Env):
          self_energy_number_img,
          enemy_energy_img,
          enemy_energy_number_img,
-         win_icon_img) = self.get_img()
+         time_img1,
+         time_img2) = self.get_img()
         # 获得所有状态
         # self_blood_state = self.handle_blood_(self_blood_img) # 自身血量
         self.self_blood_state = self.handle_blood_(self_blood_img) # 自身血量
@@ -231,7 +246,8 @@ class ENV(gym.Env):
         self_defend_state = self.handle_defend_(self_defend_img) # 自身防御条
         enemy_defend_state = self.handle_defend_(enemy_defend_img) # 对手防御条
         self_energy_state = self.handle_energy_(self_energy_img, self_energy_number_img) # 自身能量条
-        enemy_energy_state = self.handle_energy_(enemy_energy_img, enemy_energy_number_img) # 对手能量条        
+        enemy_energy_state = self.handle_energy_(enemy_energy_img, enemy_energy_number_img) # 对手能量条
+        time_state = self.handle_time_([time_img1, time_img2]) # 计算剩余秒数        
         
         # 更新优劣势flag(该flag仅用于胜负判断，不应出现在返回值中), 血量相等或一方血量低于2%则保持原situation
         if self.self_blood_state > self.enemy_blood_state and self.self_blood_state > 0.02 and self.enemy_blood_state > 0.02:
@@ -258,6 +274,7 @@ class ENV(gym.Env):
                 enemy_defend_state,
                 self_energy_state,
                 enemy_energy_state,
+                time_state,
                 distance, 
                 Jing_bbox, # (4,)
                 Ann_bbox, # (4,)
@@ -289,7 +306,8 @@ class ENV(gym.Env):
         self_energy_number_img = grab_screen(region=self.self_energy_number_size)
         enemy_energy_img = grab_screen(region=self.enemy_energy_size)
         enemy_energy_number_img = grab_screen(region=self.enemy_energy_number_size)
-        win_icon_img = grab_screen(region=self.win_icon_size)
+        time_img1 = grab_screen(region=self.time_number1_size)
+        time_img2 = grab_screen(region=self.time_number2_size)
 
         return (window_img, 
                 self_blood_img, 
@@ -300,7 +318,8 @@ class ENV(gym.Env):
                 self_energy_number_img,
                 enemy_energy_img,
                 enemy_energy_number_img,
-                win_icon_img)
+                time_img1,
+                time_img2)
         
     # 重置环境d
     # 一局判断结束后开始执行重置，键盘不断输入ENTER直到加载界面出现
@@ -384,7 +403,7 @@ class ENV(gym.Env):
     def handle_energy_(self, energy_image, number_image):
         
         # 识别能量条数
-        energy_int = self.energy_number_rec(number_image)
+        energy_int = int(self.energy_number_rec(number_image))
         # 5条能量满, 不再计算小数部分
         if energy_int != 5:
             # 判断红色通道灰度值计算能量
@@ -402,26 +421,38 @@ class ENV(gym.Env):
         else:
             return 0.0 + energy_int
     
-    # 模板匹配识别能量条数
-    def energy_number_rec(self, energy_number_img):
-        gray_img = cv2.cvtColor(energy_number_img, cv2.COLOR_RGB2GRAY)
-        _, img_thresh = cv2.threshold(gray_img, 25, 255, cv2.THRESH_BINARY_INV)
-        img_thresh[img_thresh==255] = 1
-        skeleton0 = morphology.skeletonize(img_thresh)   # 骨架提取
-        skeleton = skeleton0.astype(np.uint8)*255
-        max_val_idx = 0
-        max_val = 0
-        for i in range(len(self.template_list)):
-            res = cv2.matchTemplate(skeleton, self.template_list[i], cv2.TM_CCOEFF_NORMED)
-            # cv2.imshow("skeleton%d" % i, skeleton)
-            # cv2.imshow("skeleton_tem%d" % i, self.template_list[i])
-            # cv2.waitKey(0)
-            temp = cv2.minMaxLoc(res)[1]
-            if temp > max_val:
-                max_val_idx = i
-                max_val = temp
+    # # 模板匹配识别能量条数
+    # def energy_number_rec(self, energy_number_img):
+    #     gray_img = cv2.cvtColor(energy_number_img, cv2.COLOR_RGB2GRAY)
+    #     _, img_thresh = cv2.threshold(gray_img, 25, 255, cv2.THRESH_BINARY_INV)
+    #     img_thresh[img_thresh==255] = 1
+    #     skeleton0 = morphology.skeletonize(img_thresh)   # 骨架提取
+    #     skeleton = skeleton0.astype(np.uint8)*255
+    #     max_val_idx = 0
+    #     max_val = 0
+    #     for i in range(len(self.template_list)):
+    #         res = cv2.matchTemplate(skeleton, self.template_list[i], cv2.TM_CCOEFF_NORMED)
+    #         # cv2.imshow("skeleton%d" % i, skeleton)
+    #         # cv2.imshow("skeleton_tem%d" % i, self.template_list[i])
+    #         # cv2.waitKey(0)
+    #         temp = cv2.minMaxLoc(res)[1]
+    #         if temp > max_val:
+    #             max_val_idx = i
+    #             max_val = temp
 
-        return max_val_idx
+    #     return max_val_idx
+
+    # CNN识别能量条数
+    def energy_number_rec(self, energy_number_img:np.ndarray):
+        result = self.number_recognizer.predict([energy_number_img])[0]
+
+        return result
+    
+    # CNN识别剩余时间
+    def handle_time_(self, time_number_imgs:list):
+        result = self.number_recognizer.predict(time_number_imgs) # [第一位数, 第二位数]
+
+        return result[0]*10 + result[1]
 
     # 根据截取的window，返回神经网络预测的feature
     def handle_state_(self, window_image) -> None:
@@ -480,19 +511,26 @@ class ENV(gym.Env):
 from ultralytics import YOLO
 bbox_detector_path = './The_King_of_Fighters_XV/model/bbox_detector.pt'
 Action_detector_path = './The_King_of_Fighters_XV/model/action_detector.pt'
+Number_detector_path = './The_King_of_Fighters_XV/model/number_recognizer.pth'
 
 if __name__ == "__main__":
     Box_detector = YOLO(bbox_detector_path)
     Action_detector = YOLO(Action_detector_path)
+    Number_detector = NumberRec()
+    Number_detector.load_weights(Number_detector_path)
     
     env = ENV(
         bbox_detector = Box_detector,
         action_detector = Action_detector,
+        number_recognizer = Number_detector
     )
-
-
-    state = env.self_blood_size
+    cv.imshow("time2", env.get_img()[1])
+    cv.waitKey(0)
+    state = env.get_state()
     print(state)
+
+    # state = env.self_blood_size
+    # print(state)
 
     # state
     # (0.013433551895090356, 0.0007996161842315689, 0.007853403141361256, 0.0, 4.0, 1.1425, 

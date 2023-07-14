@@ -11,9 +11,11 @@ import time
 
 from ultralytics import YOLO
 from GameENV import ENV
+from number_rec import NumberRec
 
 bbox_detector_path = './The_King_of_Fighters_XV/model/bbox_detector.pt'
 Action_detector_path = './The_King_of_Fighters_XV/model/action_detector.pt'
+Number_detector_path = './The_King_of_Fighters_XV/model/number_recognizer.pth'
 
 # DQN网络
 class DQN(nn.Module):
@@ -144,11 +146,14 @@ class DQNAgent:
 if __name__ == "__main__":
     Box_detector = YOLO(bbox_detector_path)
     Action_detector = YOLO(Action_detector_path)
+    Number_detector = NumberRec()
+    Number_detector.load_weights(Number_detector_path)
 
     env = ENV(
         window_size=(0,0,990,560),
         bbox_detector = Box_detector,
         action_detector = Action_detector,
+        number_recognizer = Number_detector
     )
 
     dqn_agent = DQNAgent(env)

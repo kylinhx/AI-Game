@@ -39,7 +39,8 @@ if __name__ == "__main__":
 
     
     # 调用grab_screen()函数获取截图
-    img = grab_screen(region=(127, 538, 271, 545))
+    img = grab_screen(region=(0,360,1279,1079))
+    # img = grab_screen(region=(127, 538, 271, 545))
     # img = grab_screen(region=(124, 521, 264, 527))
     # 创建一个名为'Screen'的窗口
     cv2.namedWindow('Screen')
