@@ -6,8 +6,8 @@ import os
 from skimage import morphology
 import gym
 from gym import spaces
-from Grab_Screen import grab_screen
-from direct_keys import *
+
+from Action_keys import *
 from utils import *
 from number_rec import NumberRec
 
