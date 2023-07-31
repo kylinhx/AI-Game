@@ -1,47 +1,29 @@
 import cv2
 from utils import grab_screen
 
-
 if __name__ == "__main__":
 
     
     # 调用grab_screen()函数获取截图
     img = grab_screen(region=(0,360,1279,1079))
-    # img = grab_screen(region=(127, 538, 271, 545))
-    # img = grab_screen(region=(124, 521, 264, 527))
+    
     # 创建一个名为'Screen'的窗口
     cv2.namedWindow('Screen')
-    # 将BGR格式的图像转换为RGB格式
-    #img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # 将彩色图像转换为灰度图像
-    # gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # # 将灰度图像二值化
-    # threshold_value = 127 # 阈值可以根据应用程序的需求进行调整
-    # max_value = 255 # 像素值的最大值
-    # ret, bw_img = cv2.threshold(gray_img, threshold_value, max_value, cv2.THRESH_BINARY)
-
-    # print(bw_img)
-    # 显示图像
     cv2.imshow('Screen', img)
 
-    # total_pixels = bw_img.shape[0] * bw_img.shape[1] # 计算图像中所有像素的数量
-    # num_white_pixels = np.count_nonzero(bw_img == 255) # 计算像素值为255的点的数量
-    # white_ratio = num_white_pixels / total_pixels # 计算像素值为255的点占所有点的比率
-
-    # print(white_ratio)
-
-
     # 定义一个回调函数来获取鼠标坐标并在图像中显示
-    # def show_coordinates(event, x, y, flags, param):
-    #     if event == cv2.EVENT_MOUSEMOVE:
-    #         # 在控制台输出鼠标坐标
-    #         print(f'x: {x}, y: {y}')
-    #         # 在图像上绘制坐标信息
-    #         cv2.putText(img, f'x: {x}, y: {y}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+    def show_coordinates(event, x, y, flags, param):
+        if event == cv2.EVENT_MOUSEMOVE:
+            # 在控制台输出鼠标坐标
+            print(f'x: {x}, y: {y}')
+            # 将图片转换成Umat的格式
+            img_ptr = cv2.UMat(img)
+            # 在图像上绘制坐标信息
+            cv2.putText(img_ptr, f'x: {x}, y: {y}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
     # # # 将回调函数与窗口绑定
-    # cv2.setMouseCallback('Screen', show_coordinates)
+    cv2.setMouseCallback('Screen', show_coordinates)
     # 等待按下任意键后关闭窗口
     cv2.waitKey(0)
     cv2.destroyAllWindows()
